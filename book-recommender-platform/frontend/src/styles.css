@@ -1,0 +1,75 @@
+:root {
+  font-family: Inter, Arial, sans-serif;
+  color: #1f2937;
+  background: #f3f6fb;
+}
+body {
+  margin: 0;
+  background: #f3f6fb;
+}
+.navbar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 14px 24px;
+  background: white;
+  box-shadow: 0 2px 8px rgba(0,0,0,.06);
+  position: sticky;
+  top: 0;
+}
+.brand { font-weight: 700; color: #0f172a; }
+nav { display: flex; gap: 12px; flex-wrap: wrap; }
+nav a { text-decoration: none; color: #374151; padding: 8px 10px; border-radius: 8px; }
+nav a.active, nav a:hover { background: #e2e8f0; }
+.page {
+  max-width: 1100px;
+  margin: 24px auto;
+  background: white;
+  border-radius: 16px;
+  padding: 24px;
+  box-shadow: 0 6px 24px rgba(0,0,0,.05);
+}
+.grid-3, .grid-2 { display: grid; gap: 12px; margin: 12px 0; }
+.grid-3 { grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); }
+.grid-2 { grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); }
+.metric-card { background: #f8fafc; border: 1px solid #e5e7eb; border-radius: 14px; padding: 14px; }
+.metric-card h3 { margin: 8px 0; }
+.chart-block { margin-top: 20px; }
+.chart-inner { background: #f8fafc; border-radius: 14px; padding: 10px; }
+.row { display: flex; gap: 8px; align-items: center; }
+select, button {
+  padding: 10px 12px;
+  border-radius: 10px;
+  border: 1px solid #d1d5db;
+}
+button { background: #3b82f6; color: white; cursor: pointer; }
+.book-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 12px; margin-top: 16px; }
+.book-card {
+  display: grid;
+  grid-template-columns: 100px 1fr;
+  gap: 12px;
+  border: 1px solid #e5e7eb;
+  border-radius: 12px;
+  padding: 10px;
+}
+.book-card img { width: 100px; height: 140px; object-fit: cover; border-radius: 8px; }
+.error { color: #dc2626; }
+pre { overflow: auto; background: #0f172a; color: #e2e8f0; padding: 12px; border-radius: 12px; }
+.info-box, .profile-box {
+  border: 1px solid #e5e7eb;
+  background: #f8fafc;
+  border-radius: 12px;
+  padding: 14px;
+  margin: 14px 0;
+}
+.mode-badge {
+  display: inline-block;
+  background: #dbeafe;
+  color: #1e3a8a;
+  border-radius: 10px;
+  padding: 6px 10px;
+  font-weight: 600;
+}
+.hint { color: #475569; }
+.history-list { margin: 8px 0 0; }
+.history-list li { margin-bottom: 6px; }
