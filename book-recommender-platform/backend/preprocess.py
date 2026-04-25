@@ -49,7 +49,12 @@ def load_raw_data(data_dir: Path | None = None) -> Tuple[pd.DataFrame, pd.DataFr
     return users, books, ratings
 
 
-def build_mock_ratings_from_books(books: pd.DataFrame, n_users: int = 120, interactions_per_user: int = 18) -> Tuple[pd.DataFrame, pd.DataFrame]:
+def build_mock_ratings_from_books(
+    books: pd.DataFrame,
+    n_users: int = 240,
+    interactions_per_user: int = 30,
+    max_catalog_for_mock: int = 500,
+) -> Tuple[pd.DataFrame, pd.DataFrame]:
     """Fallback data generator so demo works even with only Books.csv."""
     if books.empty:
         books = pd.DataFrame(
@@ -73,9 +78,17 @@ def build_mock_ratings_from_books(books: pd.DataFrame, n_users: int = 120, inter
     )
 
     isbn_values = books["ISBN"].dropna().astype(str).unique()
+    if len(isbn_values) == 0:
+        isbn_values = np.array([f"MOCK-{i:05d}" for i in range(1, 501)])
+
+    # Use a bounded catalog so interactions are dense enough for charts and recommendations.
+    if len(isbn_values) > max_catalog_for_mock:
+        isbn_values = rng.choice(isbn_values, size=max_catalog_for_mock, replace=False)
+
     rows = []
+    sample_size = min(interactions_per_user, len(isbn_values))
     for uid in users["User-ID"]:
-        picks = rng.choice(isbn_values, size=min(interactions_per_user, len(isbn_values)), replace=False)
+        picks = rng.choice(isbn_values, size=sample_size, replace=False)
         for isbn in picks:
             raw = rng.normal(7.0, 1.7)
             rating = int(np.clip(round(raw), 0, 10))
@@ -86,8 +99,9 @@ def build_mock_ratings_from_books(books: pd.DataFrame, n_users: int = 120, inter
 
 def preprocess_data(data_dir: Path | None = None, min_user_ratings: int = 5, min_book_ratings: int = 5) -> Dict[str, pd.DataFrame]:
     users, books, ratings = load_raw_data(data_dir)
+    using_mock_data = ratings.empty
 
-    if ratings.empty:
+    if using_mock_data:
         users, ratings = build_mock_ratings_from_books(books)
 
     for col in ["User-ID", "ISBN", "Book-Rating"]:
@@ -103,16 +117,35 @@ def preprocess_data(data_dir: Path | None = None, min_user_ratings: int = 5, min
 
     if books.empty:
         isbn_unique = ratings["ISBN"].unique()
-        books = pd.DataFrame({"ISBN": isbn_unique, "Book-Title": isbn_unique, "Book-Author": "Unknown", "Year-Of-Publication": "N/A", "Publisher": "Unknown", "Image-URL-M": "https://via.placeholder.com/120x180?text=Book"})
+        books = pd.DataFrame(
+            {
+                "ISBN": isbn_unique,
+                "Book-Title": isbn_unique,
+                "Book-Author": "Unknown",
+                "Year-Of-Publication": "N/A",
+                "Publisher": "Unknown",
+                "Image-URL-M": "https://via.placeholder.com/120x180?text=Book",
+            }
+        )
 
-    # Keep users/books with enough interactions
+    # Keep users/books with enough interactions. In mock mode we relax the thresholds,
+    # otherwise you can accidentally drop everything when only Books.csv exists.
+    min_user = 1 if using_mock_data else min_user_ratings
+    min_book = 1 if using_mock_data else min_book_ratings
+
     user_counts = ratings["User-ID"].value_counts()
-    valid_users = user_counts[user_counts >= min_user_ratings].index
+    valid_users = user_counts[user_counts >= min_user].index
     ratings = ratings[ratings["User-ID"].isin(valid_users)]
 
     book_counts = ratings["ISBN"].value_counts()
-    valid_books = book_counts[book_counts >= min_book_ratings].index
+    valid_books = book_counts[book_counts >= min_book].index
     ratings = ratings[ratings["ISBN"].isin(valid_books)].copy()
+
+    # Hard fallback: if filtering still produced no rows, regenerate dense mock data.
+    if ratings.empty:
+        users, ratings = build_mock_ratings_from_books(books, n_users=280, interactions_per_user=35)
+        ratings["User-ID"] = ratings["User-ID"].astype(int)
+        ratings["ISBN"] = ratings["ISBN"].astype(str)
 
     # Encode ids
     unique_users = sorted(ratings["User-ID"].unique())
@@ -127,6 +160,18 @@ def preprocess_data(data_dir: Path | None = None, min_user_ratings: int = 5, min
     books_meta["ISBN"] = books_meta["ISBN"].astype(str)
     books_meta = books_meta.drop_duplicates(subset=["ISBN"])
     books_meta = books_meta[books_meta["ISBN"].isin(unique_books)]
+
+    if books_meta.empty:
+        books_meta = pd.DataFrame(
+            {
+                "ISBN": unique_books,
+                "Book-Title": unique_books,
+                "Book-Author": "Unknown",
+                "Year-Of-Publication": "N/A",
+                "Publisher": "Unknown",
+                "Image-URL-M": "https://via.placeholder.com/120x180?text=Book",
+            }
+        )
 
     return {
         "users": users,
