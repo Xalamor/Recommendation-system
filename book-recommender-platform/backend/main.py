@@ -39,6 +39,11 @@ def metrics():
     return service.metrics
 
 
+@app.get("/model-status")
+def model_status():
+    return service.model_status()
+
+
 @app.get("/popular-books")
 def popular_books():
     info = service.dataset_info()
@@ -55,6 +60,14 @@ def recommendations(user_id: int):
     try:
         recs = service.recommendations(user_id=user_id, top_k=10)
         return {"user_id": user_id, "recommendations": recs}
+    except KeyError:
+        raise HTTPException(status_code=404, detail=f"User-ID {user_id} not found in dataset")
+
+
+@app.get("/user-profile/{user_id}")
+def user_profile(user_id: int):
+    try:
+        return service.user_profile(user_id)
     except KeyError:
         raise HTTPException(status_code=404, detail=f"User-ID {user_id} not found in dataset")
 

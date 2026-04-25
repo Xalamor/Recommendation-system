@@ -19,12 +19,28 @@ ARTIFACTS_DIR = BASE_DIR / "artifacts"
 class RecommenderService:
     def __init__(self):
         self.ready = False
+        self._data_cache = None
+        self._load_or_bootstrap()
+
+    def _get_data(self):
+        if self._data_cache is None:
+            self._data_cache = preprocess_data()
+        return self._data_cache
+
+    @staticmethod
+    def _sample_records(df: pd.DataFrame, n: int = 5) -> List[Dict[str, Any]]:
+        sample = df.head(n).copy()
+        # Avoid pandas fillna downcasting warning by using where instead of fillna.
+        sample = sample.where(sample.notna(), "N/A")
+        return sample.to_dict(orient="records")
+
         self._load_or_bootstrap()
 
     def _load_or_bootstrap(self):
         model_path = ARTIFACTS_DIR / "model.pt"
         if not model_path.exists():
             # lazy bootstrap with preprocessing-only metadata for demo mode
+            data = self._get_data()
             data = preprocess_data()
             self.user2idx = data["user2idx"].to_dict()
             self.book2idx = data["book2idx"].to_dict()
@@ -70,6 +86,7 @@ class RecommenderService:
         self.ready = True
 
     def dataset_info(self) -> Dict[str, Any]:
+        data = self._get_data()
         data = preprocess_data()
         ratings = data["ratings"]
         users = data["users"]
@@ -101,6 +118,46 @@ class RecommenderService:
             "age_distribution": users["Age"].dropna().astype(float).tolist()[:2000] if "Age" in users.columns else [],
             "top_books": top_books.to_dict(orient="records"),
             "top_authors": top_authors,
+            "users_sample": self._sample_records(users),
+            "books_sample": self._sample_records(books),
+            "ratings_sample": self._sample_records(ratings),
+        }
+
+    def model_status(self) -> Dict[str, Any]:
+        return {
+            "is_trained_model": self.model is not None,
+            "note": self.metrics.get("note"),
+            "num_users": self.metrics.get("num_users"),
+            "num_books": self.metrics.get("num_books"),
+            "num_ratings": self.metrics.get("num_ratings"),
+        }
+
+    def user_profile(self, user_id: int) -> Dict[str, Any]:
+        data = self._get_data()
+        ratings = data["ratings"]
+        if user_id not in self.user2idx:
+            raise KeyError("User not found")
+
+        user_ratings = ratings[ratings["User-ID"] == user_id].copy()
+        merged = user_ratings.merge(self.books_meta, on="ISBN", how="left")
+        merged = merged.sort_values("Book-Rating", ascending=False)
+
+        top_history = []
+        for _, row in merged.head(8).iterrows():
+            top_history.append(
+                {
+                    "isbn": row.get("ISBN"),
+                    "title": row.get("Book-Title", "Unknown"),
+                    "author": row.get("Book-Author", "Unknown"),
+                    "book_rating": float(row.get("Book-Rating", 0)),
+                }
+            )
+
+        return {
+            "user_id": user_id,
+            "num_interactions": int(len(user_ratings)),
+            "avg_rating": float(user_ratings["Book-Rating"].mean()) if len(user_ratings) else None,
+            "top_history": top_history,
             "users_sample": users.head(5).fillna("N/A").to_dict(orient="records"),
             "books_sample": books.head(5).fillna("N/A").to_dict(orient="records"),
             "ratings_sample": ratings.head(5).fillna("N/A").to_dict(orient="records"),

@@ -87,6 +87,10 @@ uvicorn main:app --reload --port 8000
 ### API endpoints
 - `GET /dataset-info`
 - `GET /metrics`
+- `GET /model-status`
+- `GET /popular-books`
+- `GET /users`
+- `GET /user-profile/{user_id}`
 - `GET /popular-books`
 - `GET /users`
 - `GET /recommendations/{user_id}`

@@ -55,3 +55,21 @@ button { background: #3b82f6; color: white; cursor: pointer; }
 .book-card img { width: 100px; height: 140px; object-fit: cover; border-radius: 8px; }
 .error { color: #dc2626; }
 pre { overflow: auto; background: #0f172a; color: #e2e8f0; padding: 12px; border-radius: 12px; }
+.info-box, .profile-box {
+  border: 1px solid #e5e7eb;
+  background: #f8fafc;
+  border-radius: 12px;
+  padding: 14px;
+  margin: 14px 0;
+}
+.mode-badge {
+  display: inline-block;
+  background: #dbeafe;
+  color: #1e3a8a;
+  border-radius: 10px;
+  padding: 6px 10px;
+  font-weight: 600;
+}
+.hint { color: #475569; }
+.history-list { margin: 8px 0 0; }
+.history-list li { margin-bottom: 6px; }
