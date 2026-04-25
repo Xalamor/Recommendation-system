@@ -14,4 +14,7 @@ export const fetchPopularBooks = () => api.get('/popular-books').then((r) => r.d
 export const fetchUsers = () => api.get('/users').then((r) => r.data)
 export const fetchRecommendations = (userId) => api.get(`/recommendations/${userId}`).then((r) => r.data)
 export const fetchUserProfile = (userId) => api.get(`/user-profile/${userId}`).then((r) => r.data)
+export const fetchPopularBooks = () => api.get('/popular-books').then((r) => r.data)
+export const fetchUsers = () => api.get('/users').then((r) => r.data)
+export const fetchRecommendations = (userId) => api.get(`/recommendations/${userId}`).then((r) => r.data)
 export const postPredict = (payload) => api.post('/predict', payload).then((r) => r.data)

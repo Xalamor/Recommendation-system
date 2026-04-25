@@ -39,11 +39,12 @@ def _read_csv_safe(path: Path, cols: list[str]) -> pd.DataFrame:
     for sep in [";", ","]:
         try:
             df = pd.read_csv(path, sep=sep, encoding="latin-1", on_bad_lines="skip", low_memory=False, dtype=str)
+            df = pd.read_csv(path, sep=sep, encoding="latin-1", on_bad_lines="skip")
             if len(df.columns) >= 2:
                 return df
         except Exception:
             continue
-    return pd.read_csv(path, encoding="latin-1", on_bad_lines="skip", low_memory=False, dtype=str)
+    return pd.read_csv(path, encoding="latin-1", on_bad_lines="skip")
 
 
 def load_raw_data(data_dir: Path | None = None) -> Tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame]:
@@ -68,6 +69,7 @@ def build_mock_ratings_from_books(
     interactions_per_user: int = 30,
     max_catalog_for_mock: int = 500,
 ) -> Tuple[pd.DataFrame, pd.DataFrame]:
+def build_mock_ratings_from_books(books: pd.DataFrame, n_users: int = 120, interactions_per_user: int = 18) -> Tuple[pd.DataFrame, pd.DataFrame]:
     """Fallback data generator so demo works even with only Books.csv."""
     if books.empty:
         books = pd.DataFrame(
@@ -102,6 +104,9 @@ def build_mock_ratings_from_books(
     sample_size = min(interactions_per_user, len(isbn_values))
     for uid in users["User-ID"]:
         picks = rng.choice(isbn_values, size=sample_size, replace=False)
+    rows = []
+    for uid in users["User-ID"]:
+        picks = rng.choice(isbn_values, size=min(interactions_per_user, len(isbn_values)), replace=False)
         for isbn in picks:
             raw = rng.normal(7.0, 1.7)
             rating = int(np.clip(round(raw), 0, 10))
@@ -115,6 +120,8 @@ def preprocess_data(data_dir: Path | None = None, min_user_ratings: int = 5, min
     using_mock_data = ratings.empty
 
     if using_mock_data:
+
+    if ratings.empty:
         users, ratings = build_mock_ratings_from_books(books)
 
     for col in ["User-ID", "ISBN", "Book-Rating"]:
@@ -159,6 +166,17 @@ def preprocess_data(data_dir: Path | None = None, min_user_ratings: int = 5, min
         users, ratings = build_mock_ratings_from_books(books, n_users=280, interactions_per_user=35)
         ratings["User-ID"] = ratings["User-ID"].astype(int)
         ratings["ISBN"] = ratings["ISBN"].astype(str)
+
+        books = pd.DataFrame({"ISBN": isbn_unique, "Book-Title": isbn_unique, "Book-Author": "Unknown", "Year-Of-Publication": "N/A", "Publisher": "Unknown", "Image-URL-M": "https://via.placeholder.com/120x180?text=Book"})
+
+    # Keep users/books with enough interactions
+    user_counts = ratings["User-ID"].value_counts()
+    valid_users = user_counts[user_counts >= min_user_ratings].index
+    ratings = ratings[ratings["User-ID"].isin(valid_users)]
+
+    book_counts = ratings["ISBN"].value_counts()
+    valid_books = book_counts[book_counts >= min_book_ratings].index
+    ratings = ratings[ratings["ISBN"].isin(valid_books)].copy()
 
     # Encode ids
     unique_users = sorted(ratings["User-ID"].unique())

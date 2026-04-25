@@ -34,11 +34,14 @@ class RecommenderService:
         sample = sample.where(sample.notna(), "N/A")
         return sample.to_dict(orient="records")
 
+        self._load_or_bootstrap()
+
     def _load_or_bootstrap(self):
         model_path = ARTIFACTS_DIR / "model.pt"
         if not model_path.exists():
             # lazy bootstrap with preprocessing-only metadata for demo mode
             data = self._get_data()
+            data = preprocess_data()
             self.user2idx = data["user2idx"].to_dict()
             self.book2idx = data["book2idx"].to_dict()
             self.books_meta = data["books_meta"]
@@ -84,6 +87,7 @@ class RecommenderService:
 
     def dataset_info(self) -> Dict[str, Any]:
         data = self._get_data()
+        data = preprocess_data()
         ratings = data["ratings"]
         users = data["users"]
         books = data["books"]
@@ -154,6 +158,9 @@ class RecommenderService:
             "num_interactions": int(len(user_ratings)),
             "avg_rating": float(user_ratings["Book-Rating"].mean()) if len(user_ratings) else None,
             "top_history": top_history,
+            "users_sample": users.head(5).fillna("N/A").to_dict(orient="records"),
+            "books_sample": books.head(5).fillna("N/A").to_dict(orient="records"),
+            "ratings_sample": ratings.head(5).fillna("N/A").to_dict(orient="records"),
         }
 
     def _predict_scores_for_user(self, user_id: int) -> pd.DataFrame:

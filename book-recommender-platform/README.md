@@ -91,6 +91,8 @@ uvicorn main:app --reload --port 8000
 - `GET /popular-books`
 - `GET /users`
 - `GET /user-profile/{user_id}`
+- `GET /popular-books`
+- `GET /users`
 - `GET /recommendations/{user_id}`
 - `POST /predict`
 
@@ -121,3 +123,4 @@ VITE_API_BASE=http://127.0.0.1:8000 npm run dev
 2. `train_model.py` обучает embedding-модель (`model.py`).
 3. `recommender.py` загружает модель и артефакты, вычисляет top-N рекомендации.
 4. FastAPI в `main.py` отдает рекомендации frontend-части.
+

@@ -1,5 +1,7 @@
 import { useEffect, useMemo, useState } from 'react'
 import { fetchModelStatus, fetchRecommendations, fetchUserProfile, fetchUsers } from '../api'
+import { useEffect, useState } from 'react'
+import { fetchRecommendations, fetchUsers } from '../api'
 import BookCard from '../components/BookCard'
 
 export default function Demo() {
@@ -28,6 +30,12 @@ export default function Demo() {
       .catch((e) => setError(e.response?.data?.detail || e.message))
   }, [selectedUser])
 
+    fetchUsers().then((data) => {
+      setUsers(data.user_ids || [])
+      if (data.user_ids?.length) setSelectedUser(data.user_ids[0])
+    })
+  }, [])
+
   const loadRecs = async () => {
     if (!selectedUser) return
     setLoading(true)
@@ -37,6 +45,7 @@ export default function Demo() {
       const userProfile = await fetchUserProfile(selectedUser)
       setRecs(data.recommendations || [])
       setProfile(userProfile)
+      setRecs(data.recommendations || [])
     } catch (e) {
       setError(e.response?.data?.detail || e.message)
       setRecs([])
@@ -67,6 +76,9 @@ export default function Demo() {
         {status?.note && <p className="hint">{status.note}</p>}
       </section>
 
+  return (
+    <main className="page">
+      <h2>Демонстрация работы</h2>
       <div className="row">
         <select value={selectedUser} onChange={(e) => setSelectedUser(Number(e.target.value))}>
           {users.map((u) => <option key={u} value={u}>{u}</option>)}
@@ -95,6 +107,10 @@ export default function Demo() {
       {error && <p className="error">{error}</p>}
 
       <h3>Рекомендованные книги (Top-10)</h3>
+        <button onClick={loadRecs}>Получить рекомендации</button>
+      </div>
+      {loading && <p>Загрузка...</p>}
+      {error && <p className="error">{error}</p>}
       <div className="book-grid">
         {recs.map((book) => <BookCard key={book.isbn} book={book} />)}
       </div>
